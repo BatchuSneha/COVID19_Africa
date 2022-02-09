@@ -1,5 +1,5 @@
 # COVID19_Africa
-#Regression project(group) on Covid19 in Africa
+#Regression group project on Covid19 in Africa
 
 COVID-19 has spread worldwide with more than 260M cases reported, resulting in 5.2M deaths. COVID has impacted the world’s most developed economies by stifling trade, travel, GDP, and a host of other economic indicators. Africa is the world’s poorest continent as defined by people living in poverty, and therefore includes a population that is vulnerable to the spread of infectious disease. Africa is also the continent with the least amount of vaccinated individuals. Therefore, we collected and analyzed data on COVID-19 deaths for each country in Africa, and have chosen variables we believe to be indicators in driving deaths.
 
