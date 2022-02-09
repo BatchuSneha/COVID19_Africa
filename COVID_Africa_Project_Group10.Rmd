@@ -1,0 +1,218 @@
+---
+title: "COVID-19 in Africa"
+author: "Group 10: Sejoon, Sneha, Tyler"
+
+date: "December 5, 2021"
+output:
+  html_document: default
+  header-includes: \usepackage{color}
+fontsize: 12pt
+margin: 1in
+---
+
+```{r setup, echo=FALSE, message=F, warning=F, include=FALSE}
+
+# Clear the working space
+rm(list = ls())
+
+# Load directory
+setwd("/Users/SnehaBatchu/Documents/SCU_MSBA/ECON\ 2509\ Econometrics\ with\ R/FinalProject")
+#getwd()
+
+# Load the packages
+    library(doBy)
+    library(dplyr)
+    library(foreign)
+    library(ggplot2)
+    library(knitr)
+    library(lmtest)
+    library(readstata13)
+    library(sandwich)
+    library(stargazer)
+    library(AER)
+    library(gdata)
+    library(wooldridge)
+    library(openintro)
+    library(tidyr)
+    library(ggrepel)
+
+        cse=function(reg) {
+        rob=sqrt(diag(vcovHC(reg, type="HC1")))
+        return(rob)
+        }
+```
+
+### **Abstract**
+
+COVID-19 has spread worldwide with more than 260M cases reported, resulting in 5.2M deaths. COVID has impacted the world’s most developed economies by stifling trade, travel, GDP, and a host of other economic indicators. Africa is the world’s poorest continent as defined by people living in poverty, and therefore includes a population that is vulnerable to the spread of infectious disease. Africa is also the continent with the least amount of vaccinated individuals. Therefore, we collected and analyzed data on COVID-19 deaths for each country in Africa, and have chosen variables we believe to be indicators in driving deaths. 
+
+### **Part I. Question & Data**
+```{r data, echo=FALSE, warning=FALSE, include=FALSE}
+# Import CSV file to R
+df<-read.csv("COVID_Africa.csv",header=T, sep=",")
+africa=as.data.frame(df)
+```
+
+Question: Our group was curious as to what exactly is driving COVID-19 deaths in Africa. Our hypothesis is as follows: COVID-19 fatality rates are likely to be higher in more populated and less developed countries (as it relates to education, political stability, FDI, and other macroeconomic indicators we discuss at length in the following passages).
+
+We found our dataset on Kaggle.com and made some additions to it. In its original form, the data contained country specific COVID related data for all African countries as of November 2021; total cases, total deaths, total recovered, etc. We chose to pick AIDI as our variable of interest, COVID deaths as the dependent variable, and looked at a number of interesting variables made available to the public through The World Bank, the UN and other reputable international sources that we thought might do a good job in explaining covid deaths. We decided to take data from 2020 (apart from our COVID deaths variable, which spans the entirety of the pandemic -- March 2020 - present day) for two reasons: 
+
+1) Higher likelihood we’d get data for all countries
+2) Most of these variables were probably significantly impacted by COVID, for instance unemployment, and FDI, so taking pre-COVID numbers would be a better representation of the country’s static macroeconomic conditions (ie, business as usual for the country)
+
+Variable Descriptions:
+
+Below is a list of the variables we used and its corresponding long definition, as well as its data source.
+
+The dataset contains information on all 54 African countries, and includes the following variables:
+
+- deaths: the total number of COVID-19 deaths as of the 22nd of November reported by worldometer (aggregator of Ministries of Health or other Government Institutions)
+
+- deathpc: this indicates death per capita, i.e, the total number of COVID-19 deaths divided by the country's population, times 1000
+
+- total cases: the total number of COVID-19 cases as reported by worldometer.
+
+- pop: the total population as reported by worldometer
+
+- Log(Population): the total population as reported by worldometer, logged
+
+- fatRate: fatality rate, total deaths/total cases
+
+- educ: the number of years of compulsory education as reported by The World Bank.
+
+- unemp: percentage of the total population that is unemployed (as of Nov 21 or most recent available data) as reported by The World Bank.
+
+- corr: “Control of Corruption captures perceptions of the extent to which public power is exercised for private gain, including both petty and grand forms of corruption, as well as "capture" of the state by elites and private interests. Estimate gives the country's score on the aggregate indicator, in units of a standard normal distribution, i.e. ranging from approximately -2.5 to 2.5.” as reported by The World Bank.
+
+- polStab: “Political Stability and Absence of Violence/Terrorism measures perceptions of the likelihood of political instability and/or politically-motivated violence, including terrorism. Estimate gives the country's score on the aggregate indicator, in units of a standard normal distribution, i.e. ranging from approximately -2.5 to 2.5” as reported by The World Bank.
+
+- FDI: Foreign direct investment as a % of GDP as reported by The World Bank.
+
+- AIDI: Africa infrastructure development index, a number between 0 and 100 that indicates how developed a country’s infrastructure is, with 100 being the highest, as reported by the African Development Bank.
+
+- UCHI: Index to measure coverage of essential health services, reported on a scale of 1 to 100
+
+- AvgTemp: The average temperature year round as reported by the World Bank.
+
+- dict: A dummy variable in which the value of 1 is given if a country is considered a dictatorship and 0 if a democracy, as reported by Democracy-Dictatorship Index.
+
+- popDensity: People per sq. km of land area, as reported by the World Bank.
+
+- HEPC: Healthcare expenditure per capita, the amount in USD the Government spends on healthcare per person, as reported by the World Bank.
+
+- age65: % of population that is age 65 or over, as reported by the World Bank.
+
+- diabetes: % of population that has diabetes, as reported by the World Bank.
+
+- handwashing: % of population that has access to handwashing facilities, as reported by the World Bank.
+
+### **Part II. Exploratory Data Analysis**
+
+#### Descriptive Statistics
+```{r desc, echo=FALSE, warning=FALSE, comment=""}
+# Displays descriptive statistics for COVID deaths, population, education, FDI, and population density
+stargazer(africa[c("deaths", "fatRate", "pop", "popDensity", "polStab", "AIDI")], type="text", median=TRUE, digits=2, title="COVID-19 in Africa", flip=FALSE, covariate.labels=c("Deaths", "Fatality Rate", "Population", "Pop Density", "Political Stability", "AIDI"))
+```
+
+The dataset contains data from all 54 countries on the African continent. The mean number of COVID deaths for African countries is 4,100 with a standard deviation of 12,751; the standard deviation is much higher than the mean, which indicates high variation between values and an abnormal distribution of data. The median number of COVID deaths per country is 771, and is smaller than the mean, indicating again that the distribution of COVID deaths isn’t symmetric across countries. Some other notable descriptive statistics:
+
+- The average population size is 25.612M.
+- Political stability is relatively low on the continent, sitting at -.64 on a scale from -2.5 to 2.5, with 2.5 being the most political stable a country can be.
+- The average population density is 117 people per square mile; for context, the USA has a population density of ~93 people per square mile
+- South Africa has, by far, the most deaths at 89,562 while Burundi has the least at 38
+- The average fatality rate is 11.69%, meaning 11.69% of COVID-19 cases in Africa result in death
+- The average AIDI score is 28.18, with the three most developed countries being Seychelles (97), Egypt (88) and Libya (83).
+
+#### Plot 1: Distribution of COVID-19 Deaths
+```{r histogram, echo=FALSE, warning=FALSE, comment=""} 
+# Displays a histogram of the distribution of COVID deaths, with 25 bins 
+ggplot(data=africa, aes(x=fatRate)) +
+  geom_histogram(bins=25)
+```
+
+From our descriptive statistics above, particularly with respect to the mean of fatRate being greater than the median, we can see that that data is not normally distributed among countries and instead the distribution is skewed right. This histogram of fatRate confirms that. Moving forward, we will apply a log transformation to the fatRate values so that the data is normalized.
+
+#### Plot 2: COVID-19 Deaths in Africa vs AIDI score
+```{r graph3, echo=FALSE, warning=FALSE, message=F, comment=""}
+# Displays a scatterplot of COVID deaths on a country's AIDI
+ggplot(africa, aes(x=AIDI, y=log(fatRate))) + stat_smooth(method=lm, col = "red", se=FALSE) + geom_point(col="blue") +labs(title = "", x = "AIDI", y = "Fatality Rate, logged")+geom_text(aes(label=Country), hjust=1, vjust=1)
+```
+
+The scatterplot indicates a strong positive relationship between COVID deaths per capita and a country's AIDI score; ie, a better AIDI score means more COVID deaths. This is contrary to our hypothesis of course, where we believed less robust economies would result in fewer COVID-19 deaths. Thinking about this more, it might make sense for two reasons; 1) a more industrialized economy has the means to better test and identify COVID-19 deaths and 2) a more industrialized economy may suggest its citizens are able to travel around the country spreading the disease easier. We will continue to use AIDI as our variable of interest, as it seems to do a good job in explaining deaths per capita.
+
+### **Part III. Regression Analysis**
+
+#### Baseline Regression
+```{r regression1, echo=FALSE, warning=FALSE, comment=""}
+# Run 6 regressions
+reg1 <-lm(log(fatRate)~AIDI, data=africa)
+reg2 <-lm(log(fatRate)~AIDI + age65, data=africa)
+reg3 <-lm(log(fatRate)~AIDI + age65 + HEPC, data=africa)
+reg4 <-lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + corr, data=africa)
+reg5 <-lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + I(educ^2) + corr, data=africa)
+reg6 <-lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + I(educ^2) + corr + AIDI*popDensity + diabetes, data=africa)
+
+# display all 6 regressions in one table.
+stargazer(reg1, reg2, reg3, reg4, reg5, reg6, se=list(cse(reg1), cse(reg2), cse(reg3), cse(reg4), cse(reg5), cse(reg6)), title="COVID in Africa - Baseline Regressions", type="text", star.cutoffs=c(0.1, 0.05, 0.01), df=FALSE, digits=3)
+```
+
+We started our analysis by regressing log(fatRate) on AIDI, age65 and HEPC which resulted in a very low R2 value - however, most coefficients were statistically significant apart from HEPC in the third regression. We added potential omitted variables in subsequent regressions, such as logPop, popDensity, educ, corr, diabetes, handwashing, and AIDI*educ. The estimated coefficient of these variables had significant variation from regression (4) to (6). We noticed a big increase in our R2 value between regressions (3) and (4) when we added logPop, popDensity, educ and corr; with 1/2 of those variables being statistically significant in regression (4). In reg (5), we added a non - linearity, square of education, which made the variable statististically significant. We noticed that the diabetes and handwashing variables were not statistically significant, which comes as a surprise to us because current science has indicated that diabetics face more serious risks as it relates to COVID-19. Eyeballing the adjusted R2 and statistically significant variables, we concluded that regression (5) is our baseline regression.
+
+According to the baseline regression, everything else equal:
+
+* A 1 point increase in a country's AIDI will, on average, lead our fatRate to increase by ~3.7%.
+* If a country's population % aged 65 and over increases by 1% will, on average, lead our fatRate to decrease by 35%.
+* A $1 more in HEPC will on average, lead our fatRate to decrease by .02%.
+* A 1% increase in log(pop) will on average, lead our fatRate to increase by 200%
+* A 1% increase in a country's popDensity will on average, lead our fatRate to decrease by ~.40%.
+* If a country's mandatory schooling is increased by 1 year, it will on average, lead our fatRate to increase by ~270%.
+* A 1 point increase in a country's corruption score will, on average, lead our fatRate to increase 101.7%  
+
+All estimates are statistically significant and the magnitude of the effects is economically significant.   
+According to the Regression (5), which we have chosen as our baseline regression, AIDI, age65, HEPC, logPop, popDensity, educ and corr explains 56.2% of the variation in fatRate.
+
+#### Alternartive Regression
+```{r alt_regression, echo=FALSE, warning=FALSE, comment=""}
+#Run 5 regressions
+#Removing HEPC from regression
+reg7 <-lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + I(educ^2) + corr, data=africa) 
+reg8 <- lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + I(educ^2) + corr + dict + polStab, data=africa) 
+reg9 <- lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + educ + I(educ^2) + corr + dict + polStab + FDI, data=africa)
+#Adding non linearities to baseline
+reg10 <- lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + corr + educ + I(educ^2) + I(HEPC^2), data=africa) 
+reg11 <- lm(log(fatRate)~AIDI + age65 + HEPC + logPop + popDensity + corr + educ + I(educ^2) + I(HEPC^2) + I(HEPC^3), data=africa) 
+
+# display all 5 alternative regressions in one table.
+stargazer(reg7, reg8, reg9, reg10, reg11, se=list(cse(reg7), cse(reg8), cse(reg9), cse(reg10), cse(reg11)), title="COVID in Africa - Alternative Regressions", type="text", star.cutoffs=c(0.1, 0.05, 0.01), df=FALSE, digits=3)
+```
+
+For further analysis, we added few more variables, such as dictatorship, political stability, and FDI, which we thought might have affected COVID deaths. There is a slight variation in adjusted R2, the estimates coefficients and these new variables are not statistically significant. To understand the magnitude of HEPC (which is the only variable not significant in the baseline regression), we added square and cube of this variable, which indicated rise in adjusted R2 but not much change in other coefficients. HEPC (linear, squared and bubed terms) also seem to be statistically significant in regression (5).  
+  
+#### Hypothesis Tests   
+```{r hypothesis, echo=FALSE, warning=FALSE, comment=""}
+# conducts F-test on the null hypothesis that the coefficient of HEPC^3 and HEPC^2 equals 0.
+lht(reg11, c("I(HEPC^3)=0"), white.adjust="hc1")
+lht(reg11, c("I(HEPC^2)=0", "I(HEPC^3)=0"), white.adjust="hc1")
+```
+
+Based on the first F-tests, we can conclude that the quadratic specification is preferred to the cubic one, as we are able to reject the null hypothesis, testing if the variable I(HEPC^3) can equal to zero, and is statistically significant at the 5% level and the F-value is more than the critical value. In the second F-test, when testing for both I(HEPC^2) and I(HEPC^3), we are able to reject the null, as the F-value is more than the critical value, but only at the 10% level, which means cubic specification is preferred to the linear specification. Also, the regression (5) from the alternative regression table shows the adjusted R2 squared value going down when adding I(HEPC^2) to the baseline regression, but when adding I(HEPC^3), the adjusted R2 value goes higher, and the coefficients of each variables are statistically significant. Thus, based on the F-tests we reject the null hypothesis in both the cases and cubic specification is the best fit.
+
+### **Part IV. Data Limitations & Conclusion** 
+
+#### Internal Validity  
+- We’ve had some missing data for variables such as hand washing, diabetes, age65 and was using past data.   
+- While covid started in late 2019 and is still ongoing, our data is derived from year 2019.    
+- We can see that variable AIDI suffers from omitted variable bias as it goes up and down when adding in different variables.  
+
+#### External Validity  
+- Some of the data from Africa may be misreported as some nations have most of their population living in rural communities, so the number of deaths or cases may have been underreported, trying to downplay the effect of covid. 
+
+#### Data Limitations
+- Every country is sovereign and has differing COVID lockdown restrictions
+- South Africa as an outlier in terms of absolute deaths, but we have decided to keep it as it is not bad data 
+- Reliability on record keeping in developing countries, especially as it relates to Africa's rural population
+- Not all variables are over the same period of time-- we had to fill in some blanks via a Google search and some of these were a few years old (or the most recent value we could find)
+- 8 countries did not have data available for % of population with access to handwashing facilities, we filled those in with the mean of the subsample
+
+#### Conclusion
+According to this analysis, we can conclude that AIDI, HEPC, logPop, mandatory schooling years, and corruption score have a positive causal effect on COVID deaths (or fatality rates) in Africa. Age65, and popDensity have a negative causal effect on COVID deaths (or fatality rates) in Africa, contrary to what we've been told through modern science and news. However, a country's percentage of population that has diabetes or has access to handwashing facilities does not seem to have a causal effect on COVID deaths in Africa, which is again, contradictory to what has been indicated by general science, which might be due to under counting of COVID-19 deaths by country.      
