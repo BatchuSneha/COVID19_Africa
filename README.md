@@ -1,0 +1,6 @@
+# COVID19_Africa
+#Regression project(group) on Covid19 in Africa
+
+COVID-19 has spread worldwide with more than 260M cases reported, resulting in 5.2M deaths. COVID has impacted the world’s most developed economies by stifling trade, travel, GDP, and a host of other economic indicators. Africa is the world’s poorest continent as defined by people living in poverty, and therefore includes a population that is vulnerable to the spread of infectious disease. Africa is also the continent with the least amount of vaccinated individuals. Therefore, we collected and analyzed data on COVID-19 deaths for each country in Africa, and have chosen variables we believe to be indicators in driving deaths.
+
+According to this analysis, we can conclude that AIDI, HEPC, logPop, mandatory schooling years, and corruption score have a positive causal effect on COVID deaths (or fatality rates) in Africa. Age65, and popDensity have a negative causal effect on COVID deaths (or fatality rates) in Africa, contrary to what we’ve been told through modern science and news. However, a country’s percentage of population that has diabetes or has access to handwashing facilities does not seem to have a causal effect on COVID deaths in Africa, which is again, contradictory to what has been indicated by general science, which might be due to under counting of COVID-19 deaths by country.
